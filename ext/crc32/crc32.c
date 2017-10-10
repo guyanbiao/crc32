@@ -35,30 +35,20 @@ VALUE method_crc32_calculate(VALUE self, VALUE data, VALUE length, VALUE previou
 
   datalen = NUM2UINT(length);
   bindata = StringValuePtr(data);
-  crc = NUM2UINT(previousCrc32) ^ ~ 0U;
+
+  //crc = NUM2UINT(previousCrc32) ^ ~ 0U;
+  crc = 0xFFFFFFFF;
 
   current = (uint32_t*) bindata;
-  // process eight bytes at once
-  while (datalen >= 8)
-  {
-    one = *current++ ^ crc;
-    two = *current++;
-    crc = Crc32Lookup[7][ one  & 0xFF] ^
-      Crc32Lookup[6][(one>> 8) & 0xFF] ^
-      Crc32Lookup[5][(one>>16) & 0xFF] ^
-      Crc32Lookup[4][ one>>24        ] ^
-      Crc32Lookup[3][ two      & 0xFF] ^
-      Crc32Lookup[2][(two>> 8) & 0xFF] ^
-      Crc32Lookup[1][(two>>16) & 0xFF] ^
-      Crc32Lookup[0][ two>>24        ];
-    datalen -= 8;
-  }
 
-  currentChar = (unsigned char*) current;
-  // remaining 1 to 7 bytes
-  while (datalen--)
-    crc = (crc >> 8) ^ Crc32Lookup[0][(crc & 0xFF) ^ *currentChar++];
-  crc =  crc ^ ~0U;
+
+ currentChar = (unsigned char*) current;
+
+  while (datalen--) {
+      crc = (crc << 8) ^ Crc32Lookup[0][((crc >> (32 - 8)) & 0xff) ^ *currentChar++];
+  }
+  crc ^= 0x00000000;
+  crc &= 0xFFFFFFFF;
   crc32=UINT2NUM(crc);
   return crc32;
 }
